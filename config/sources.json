@@ -1,0 +1,33 @@
+{
+  "_readme": "Fill in pages and selectors/mapping for each source. Use `python -m adoptme probe <url>` to inspect a page. Sources with no pages/selectors are skipped. amvgg.com is intentionally NOT listed: its terms prohibit scraping without written permission.",
+
+  "elvebredd": {
+    "type": "html",
+    "enabled": true,
+    "pages": [],
+    "selectors": {
+      "row": null,
+      "name": null,
+      "value": null,
+      "variants": null,
+      "demand": null
+    },
+    "_note": "Add the value-list page URL(s) under pages, e.g. {\"url\": \"...\", \"category\": \"pets\"}. If the site renders from JSON, change type to \"json\" and use a `mapping` block instead (see README)."
+  },
+
+  "adoptmevalues": {
+    "type": "html",
+    "enabled": true,
+    "pages": [
+      { "url": "https://adoptmevalues.gg/values", "category": "" }
+    ],
+    "selectors": {
+      "row": null,
+      "name": null,
+      "value": null,
+      "variants": null,
+      "demand": null
+    },
+    "_note": "/values is the value list page. Selectors still need filling in from the live HTML (run `probe`). If the page is JS-rendered, use type \"json\" with embedded_selector or the XHR endpoint."
+  }
+}
