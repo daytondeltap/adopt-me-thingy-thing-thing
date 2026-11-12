@@ -8,6 +8,7 @@ import logging
 from ..http import PoliteClient
 from .adoptmevalues import AdoptMeValuesSource
 from .base import Source
+from .elvebredd import ElvebreddSource
 from .html import HtmlSource
 from .jsonapi import JsonSource
 
@@ -17,6 +18,7 @@ SOURCE_TYPES: dict[str, type[Source]] = {
     "html": HtmlSource,
     "json": JsonSource,
     "adoptmevalues": AdoptMeValuesSource,
+    "elvebredd": ElvebreddSource,
 }
 
 

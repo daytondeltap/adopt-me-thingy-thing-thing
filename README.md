@@ -2,7 +2,7 @@
 
 Personal-use tool that records pet values from value-list sites, DMs you on Discord when a pet you're watching changes or crosses a target, and gives a simple trend forecast.
 
-**Sources:** Adopt Me Values is active. Elvebredd is disabled while its calculator and API paths are restricted by robots.txt. amvgg.com is excluded.
+**Sources:** Adopt Me Values is active. Elvebredd is enabled with a per-source robots.txt override, because the owner states its operator gave permission (its robots.txt disallows the calculator and `/api` paths). amvgg.com is excluded.
 
 **Scope:** values only. It does not scrape trade ads and it does not automate anything in Roblox/Adopt Me. Alerts are notifications; you make the trades yourself.
 
@@ -19,7 +19,7 @@ Personal-use tool that records pet values from value-list sites, DMs you on Disc
 | Discord bot (`/watch /unwatch /watchlist /value /trend`) + background poller | done; **not yet run against real Discord** |
 | Baseline trend predictor | done, tested |
 | Adopt Me Values ingest | Verified against its public pet list. Covers the initial batch of pets and available variants in that batch. |
-| Elvebredd ingest | Disabled pending an allowed value feed. |
+| Elvebredd ingest | Parser written from one real fragment and tested on synthetic data; **not yet run against the live page**. Reads regular/neon/mega values from `/adopt-me-calculator`. |
 | Web dashboard | Search, source filter, and charts from a local JSON export. |
 | Gradient boosting / neural net predictor | later, needs weeks of history first |
 
@@ -63,7 +63,7 @@ Threshold alerts fire when the value *crosses* your target, not on every poll wh
 
 ## Politeness
 
-One request per host at least `MIN_DELAY_SECONDS` apart, robots.txt respected by default, exponential backoff on 429/5xx, and a descriptive `USER_AGENT`. Keep `POLL_MINUTES` generous; values only change daily on most sites.
+One request per host at least `MIN_DELAY_SECONDS` apart, robots.txt respected by default (a source can opt out with `ignore_robots` in `config/sources.json`, only with the site operator's permission), exponential backoff on 429/5xx, and a descriptive `USER_AGENT`. Keep `POLL_MINUTES` generous; values only change daily on most sites.
 
 ## Prediction roadmap
 

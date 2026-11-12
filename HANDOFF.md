@@ -24,14 +24,15 @@ The owner originally also wanted to "snipe" trades (auto-trade). That was ruled 
 ## 3. Current state
 
 - Adopt Me Values ingest reads variant data embedded in the public `/values/pets` page. A live pass stored 204 values for 17 pets. Coverage is limited to the page's initial batch. Testing `?page=2` returned the same batch.
-- Elvebredd's robots.txt restricts the calculator and API paths. The source remains disabled until there is an allowed value feed.
+- Elvebredd: source `elvebredd` reads `rvalue`/`nvalue`/`mvalue` (regular/neon/mega) from the Next.js payload embedded in `https://elvebredd.com/adopt-me-calculator`. Its robots.txt disallows that path and `/api`; the owner states the operator gave permission, so `config/sources.json` sets `ignore_robots: true` for this source only (the global default stays on). Only one real record fragment has been seen (`"image":"/images/pets/Bat Dragon.png","rvalue":1001,"nvalue":2310,"mvalue":6550`), so the parser is tolerant and tests use synthetic data; **it has not run against the live page**. Unknown: whether those values assume fly/ride potions. Its unit differs from Adopt Me Values (1001 vs 3.15 Frost for Bat Dragon); sources are stored separately and not comparable yet.
+- Adopt Me Values pagination: the page's JavaScript requests `https://adoptmevalues.gg/api/v1/items/Adoptme/pets?page=2&limit=24&sortBy=position` for more pets (24 per page; derived from shipped JS, response never inspected). `/api/` may be disallowed by its robots.txt.
 - The dashboard under `docs/` is static. `python -m adoptme export-dashboard adoptme-dashboard.json` exports pet history for browser-local import. See the README for GitHub Pages setup.
 - SQLite storage, alerts, and the least-squares baseline are present. Discord has yet to be tested with a real server. No gradient boosting or neural net has been trained.
 
 ## 4. Next steps
 
 1. Verify bot commands and DM delivery with the owner's Discord app. Run the bot on an always-on machine to build history.
-2. Find an allowed Elvebredd value feed and a public mechanism for full-catalog coverage on Adopt Me Values before extending collection.
+2. Run `python -m adoptme ingest` on the owner's machine to verify Elvebredd, and fix the parser with the real payload if needed. Fetch the Adopt Me Values `page=2` API URL above (e.g. with curl) and share the JSON shape; if it matches the `initialItems` records, add pagination to `sources/adoptmevalues.py` (with `ignore_robots` only if the operator permits).
 3. Once enough history exists, run walk-forward backtests before adding more complex models.
 
 ## 5. Operational notes

@@ -84,15 +84,20 @@ class PoliteClient:
 
     # -- public --
 
-    def allowed(self, url: str) -> bool:
+    def allowed(self, url: str, respect_robots: bool | None = None) -> bool:
+        """`respect_robots` overrides the client default for this one request.
+
+        Pass False only for a site whose operator has given explicit permission
+        (see `ignore_robots` in config/sources.json).
+        """
         parts = urlsplit(url)
-        if not self.respect_robots:
+        if not (self.respect_robots if respect_robots is None else respect_robots):
             return True
         rules = self._rules_for(parts.scheme, parts.netloc)
         return rules is None or rules.can_fetch(self.user_agent, url)
 
-    def get(self, url: str) -> httpx.Response:
-        if not self.allowed(url):
+    def get(self, url: str, respect_robots: bool | None = None) -> httpx.Response:
+        if not self.allowed(url, respect_robots):
             raise RobotsDisallowed(f"robots.txt disallows {url}")
         host = urlsplit(url).netloc
         for attempt in range(self._max_retries + 1):
@@ -110,8 +115,8 @@ class PoliteClient:
             return resp
         raise RuntimeError("unreachable")
 
-    def get_text(self, url: str) -> str:
-        return self.get(url).text
+    def get_text(self, url: str, respect_robots: bool | None = None) -> str:
+        return self.get(url, respect_robots).text
 
-    def get_json(self, url: str):
-        return self.get(url).json()
+    def get_json(self, url: str, respect_robots: bool | None = None):
+        return self.get(url, respect_robots).json()
