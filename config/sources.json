@@ -1,9 +1,8 @@
 {
-  "_readme": "Fill in pages and selectors/mapping for each source. Use `python -m adoptme probe <url>` to inspect a page. Sources with no pages/selectors are skipped. amvgg.com is intentionally NOT listed: its terms prohibit scraping without written permission.",
-
+  "_readme": "Configured sources only poll public value pages. See README for source coverage and robots.txt restrictions.",
   "elvebredd": {
     "type": "html",
-    "enabled": true,
+    "enabled": false,
     "pages": [],
     "selectors": {
       "row": null,
@@ -12,22 +11,16 @@
       "variants": null,
       "demand": null
     },
-    "_note": "Add the value-list page URL(s) under pages, e.g. {\"url\": \"...\", \"category\": \"pets\"}. If the site renders from JSON, change type to \"json\" and use a `mapping` block instead (see README)."
+    "_note": "Disabled because the public calculator and API paths are restricted by robots.txt. An allowed feed is needed."
   },
-
   "adoptmevalues": {
-    "type": "html",
+    "type": "adoptmevalues",
     "enabled": true,
     "pages": [
-      { "url": "https://adoptmevalues.gg/values", "category": "" }
+      {
+        "url": "https://adoptmevalues.gg/values/pets"
+      }
     ],
-    "selectors": {
-      "row": null,
-      "name": null,
-      "value": null,
-      "variants": null,
-      "demand": null
-    },
-    "_note": "/values is the value list page. Selectors still need filling in from the live HTML (run `probe`). If the page is JS-rendered, use type \"json\" with embedded_selector or the XHR endpoint."
+    "_note": "Reads the embedded pet list and its variant values in Frost units."
   }
 }

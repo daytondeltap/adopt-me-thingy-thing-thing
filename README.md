@@ -2,7 +2,7 @@
 
 Personal-use tool that records pet values from value-list sites, DMs you on Discord when a pet you're watching changes or crosses a target, and gives a simple trend forecast.
 
-**Sources:** Elvebredd and adoptmevalues.gg (permission obtained by the owner of this repo). amvgg.com is deliberately excluded: its terms prohibit scraping.
+**Sources:** Adopt Me Values is active. Elvebredd is disabled while its calculator and API paths are restricted by robots.txt. amvgg.com is excluded.
 
 **Scope:** values only. It does not scrape trade ads and it does not automate anything in Roblox/Adopt Me. Alerts are notifications; you make the trades yourself.
 
@@ -18,7 +18,9 @@ Personal-use tool that records pet values from value-list sites, DMs you on Disc
 | `probe` tool to find selectors | done |
 | Discord bot (`/watch /unwatch /watchlist /value /trend`) + background poller | done; **not yet run against real Discord** |
 | Baseline trend predictor | done, tested |
-| **Real selectors for Elvebredd / adoptmevalues.gg** | **TODO** (see below) |
+| Adopt Me Values ingest | Verified against its public pet list. Covers the initial batch of pets and available variants in that batch. |
+| Elvebredd ingest | Disabled pending an allowed value feed. |
+| Web dashboard | Search, source filter, and charts from a local JSON export. |
 | Gradient boosting / neural net predictor | later, needs weeks of history first |
 
 ## Setup
@@ -33,19 +35,22 @@ python -m pytest            # should be all green
 
 Create the bot at <https://discord.com/developers/applications>, copy its token into `.env`, and invite it to a server you share with it (scope `bot` + `applications.commands`). It DMs you alerts, so you must share a server with it.
 
-## Hooking up the real sites
+## Record values and open the dashboard
 
-The sites weren't reachable from the development sandbox, so the selectors in `config/sources.json` are blank and those sources are skipped until you fill them in:
+```bash
+python -m adoptme ingest
+python -m adoptme export-dashboard adoptme-dashboard.json
+```
 
-1. `python -m adoptme probe https://adoptmevalues.gg/values` prints embedded JSON, repeated elements (likely list rows) and any API-looking URLs.
-2. Fill in `config/sources.json`:
-   - **Server-rendered HTML** (`"type": "html"`): set `selectors.row`, `name`, and either `value` (variant parsed from the name, e.g. "Neon Frost Dragon") or `variants` (`{"normal": css, "neon": css, "mega": css}` for one-row-per-pet tables). Optional `demand`.
-   - **JSON** (`"type": "json"`): use a `mapping` block with `items_path`, `name`, `value` or `variants`, and `embedded_selector` (e.g. `script#__NEXT_DATA__`) when the JSON is inside the page.
-   - If `probe` shows no data in the HTML, the site loads values by XHR: find the JSON request in your browser's Network tab and put that URL in `pages` with `"type": "json"`.
-3. `python -m adoptme ingest` runs one pass without Discord. Check the output, then:
-4. `python -m adoptme bot` runs the bot and polls every `POLL_MINUTES`.
+Open the [GitHub Pages dashboard](https://daytondeltap.github.io/adopt-me-thingy-thing-thing/) and select the exported file. You can also serve it locally with `python -m http.server --directory docs 8000` and open <http://localhost:8000>. The dashboard reads the file in the browser. The export contains pet history only, excluding Discord users, watchlists, and alerts. Keep the export and SQLite database out of the published directory.
 
-`config/sources.json` is re-read every poll, so selector fixes take effect without a restart.
+Adopt Me Values is read from the embedded data on its public pets list. It records the initial set of pets, with normal, neon, and mega potion variants where present. Values use the source's Frost scale. Full-catalog pagination is unverified. To collect history and receive alerts, run `python -m adoptme bot` on a machine that stays on. GitHub Pages serves the dashboard, while polling and Discord run on that machine.
+
+GitHub Pages publishing source is `main` → `/docs` (Deploy from a branch). If Pages is off, select that source in [Settings → Pages](https://github.com/daytondeltap/adopt-me-thingy-thing-thing/settings/pages).
+
+## Adding an allowed source
+
+Use `python -m adoptme probe <url>` to inspect an allowed public value page. In `config/sources.json`, an `html` source takes `selectors.row`, `name`, and either `value` or a `variants` map, plus optional `demand`. A `json` source takes a `mapping` block with `items_path`, `name`, and either `value` or `variants`. For JSON embedded in HTML, use `embedded_selector`. The bot reloads configuration every poll.
 
 ## Commands
 

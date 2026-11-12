@@ -6,13 +6,18 @@ import json
 import logging
 
 from ..http import PoliteClient
+from .adoptmevalues import AdoptMeValuesSource
 from .base import Source
 from .html import HtmlSource
 from .jsonapi import JsonSource
 
 log = logging.getLogger(__name__)
 
-SOURCE_TYPES: dict[str, type[Source]] = {"html": HtmlSource, "json": JsonSource}
+SOURCE_TYPES: dict[str, type[Source]] = {
+    "html": HtmlSource,
+    "json": JsonSource,
+    "adoptmevalues": AdoptMeValuesSource,
+}
 
 
 def load_sources(config_path: str, client: PoliteClient) -> list[Source]:

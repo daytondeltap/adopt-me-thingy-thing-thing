@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -22,6 +23,8 @@ def main() -> None:
     sub.add_parser("bot", help="run the Discord bot with the background poller")
     p_probe = sub.add_parser("probe", help="inspect a page to find selectors")
     p_probe.add_argument("url")
+    p_export = sub.add_parser("export-dashboard", help="export pet history for browser import")
+    p_export.add_argument("output", type=Path)
     p_trend = sub.add_parser("trend", help="print a trend forecast from stored history")
     p_trend.add_argument("pet")
     p_trend.add_argument("--variant", default="normal")
@@ -61,6 +64,12 @@ def main() -> None:
             print(probe(client, args.url))
         finally:
             client.close()
+    elif args.cmd == "export-dashboard":
+        from .dashboard import export_dashboard
+
+        with db.session(cfg.db_path) as conn:
+            count = export_dashboard(conn, args.output)
+        print(f"Exported {count} pet value series to {args.output}")
     elif args.cmd == "trend":
         from .messages import format_forecast
         from .parsing import normalize_variant_input

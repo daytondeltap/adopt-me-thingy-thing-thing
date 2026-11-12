@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Review your personal Adopt Me pet value history.">
+<title>Adopt Me Value Tracker</title>
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js" defer></script>
+</head>
+<body>
+<header class="top"><span>ADOPT ME</span><a href="https://github.com/daytondeltap/adopt-me-thingy-thing-thing#setup">Setup guide ↗</a></header>
+<main>
+<section class="hero" aria-labelledby="title">
+<div><h1 id="title">Pet Value<br>Tracker</h1><p>Search your recorded pet values and see how each variant has changed over time.</p></div>
+<div class="import"><label for="file">Import a dashboard export</label><input id="file" type="file" accept=".json,application/json"><p>Files stay in this browser tab.</p></div>
+</section>
+<p id="status" role="status">No history loaded. Run <code>python -m adoptme export-dashboard adoptme-dashboard.json</code> and import the file above.</p>
+<section id="dashboard" hidden aria-labelledby="values">
+<div class="section-head"><h2 id="values">Recorded values</h2><div class="filters"><label>Search pets <input id="search" type="search" placeholder="e.g. Bat Dragon"></label><label>Source <select id="source"><option value="">All sources</option></select></label></div></div>
+<div class="workspace">
+<div class="results"><table><thead><tr><th scope="col">Pet</th><th scope="col">Latest</th></tr></thead><tbody id="rows"></tbody></table><p id="empty" hidden>No pets match these filters.</p></div>
+<article id="detail" hidden><h3 id="pet"></h3><p id="metadata"></p><div class="metric"><strong id="value"></strong><span id="movement"></span></div><div id="chart"></div><p id="recorded"></p></article>
+</div>
+</section>
+</main>
+<footer>Unofficial fan tool. Discord alerts run through the separate tracker bot.</footer>
+</body>
+</html>
