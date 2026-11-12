@@ -6,6 +6,8 @@ Personal-use tool that records pet values from value-list sites, DMs you on Disc
 
 **Scope:** values only. It does not scrape trade ads and it does not automate anything in Roblox/Adopt Me. Alerts are notifications; you make the trades yourself.
 
+> Continuing with an AI assistant or a new developer? Start with [HANDOFF.md](HANDOFF.md): it has the project context, decisions, current state and next steps.
+
 ## Status
 
 | Part | State |
