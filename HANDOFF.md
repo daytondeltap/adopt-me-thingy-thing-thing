@@ -1,6 +1,6 @@
 # Handoff brief for the next AI assistant
 
-You are taking over a small Python project. You have not seen the earlier conversation, so everything you need is here. Read this file, then `README.md`. Last updated 2026-11-12 (commit after `6766369`).
+You are taking over a small Python project. You have not seen the earlier conversation, so everything you need is here. Read this file, then `README.md`. Last updated 2026-11-12.
 
 ## 1. Goal
 
@@ -62,13 +62,13 @@ Key behaviours to preserve:
 | Source | State |
 |---|---|
 | **adoptmevalues.gg** (`type: adoptmevalues`) | Active. Reads the Next.js payload embedded in `https://adoptmevalues.gg/values/pets` (`self.__next_f.push` chunks, `"initialItems"` array, items with `category == "Pets"`). Gives normal/neon/mega × potion combos (`np`, `f`, `r`, `rf`). A live pass reported in commit `d3d2608` stored 204 values for 17 pets. |
-| **elvebredd** (`type: elvebredd`) | Enabled with `ignore_robots`. Reads `https://elvebredd.com/adopt-me-calculator`; finds JSON objects containing `rvalue` / `nvalue` / `mvalue` (regular / neon / mega) in the same kind of payload. **Never run against the live page.** Written from one real fragment: `"image":"/images/pets/Bat Dragon.png","rvalue":1001,"nvalue":2310,"mvalue":6550`. Name comes from `name`, else the image filename. |
+| **elvebredd** (`type: elvebredd`) | Enabled with `ignore_robots`. Reads `https://elvebredd.com/adopt-me-calculator`; reads explicit potion columns from the embedded payload. Verified live with 9,636 values across 803 pets. Eggs and pet wear are skipped. |
 | **amvgg.com** | Excluded (section 2). |
 
 Known unknowns and risks:
-- **Units differ.** adoptmevalues values are in "Frost" units (Bat Dragon 3.15, meaning relative to Frost Dragon); Elvebredd uses different numbers (Bat Dragon 1001). The two are not comparable yet. If a site rebases its unit, every value shifts at once and would trigger false alerts; nothing guards against this yet.
+- **Units differ.** adoptmevalues values are in "Frost" units (Bat Dragon 3.15, meaning relative to Frost Dragon); Elvebredd uses different numbers (Bat Dragon 1001). The two are not comparable yet. If a site rebases its unit, every value shifts at once and would trigger false alerts; the ingest guard logs a possible rebase and suppresses alerts for the affected source. Forecasts use each source separately.
 - **Coverage is partial.** The adoptmevalues page ships only its first batch. ChatGPT reported 24 embedded records; the earlier live pass stored 17 pets (non-pet items in the batch may explain the gap, unverified). Adding `?page=2` to the page URL returned the same batch. The page's JavaScript requests `https://adoptmevalues.gg/api/v1/items/Adoptme/pets?page=2&limit=24&sortBy=position` for more, but **nobody has seen its response**, and `/api/` may be disallowed by robots.txt.
-- **Elvebredd potions:** unknown whether its values assume fly/ride.
+- **Elvebredd potions:** default fields vary in meaning. Use explicit columns; the database migration preserves previous snapshots under `elvebredd_legacy`.
 - **The Discord bot has never run against real Discord.** It constructs and registers 5 commands (`/watch /unwatch /watchlist /value /trend`) and that is all that has been checked.
 
 ## 6. Environment limits (important if you run in a sandbox)
@@ -82,19 +82,19 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"            # in some sandboxes add --break-system-packages
 cp .env.example .env               # set DISCORD_TOKEN and USER_AGENT
 python -m adoptme init-db
-python -m pytest                   # all green (50 tests at time of writing)
+python -m pytest                   # all green (56 tests at time of writing)
 python -m adoptme ingest           # one live pass, prints changes, no Discord
 python -m adoptme export-dashboard adoptme-dashboard.json
 python -m adoptme bot              # Discord bot + poller
 ```
 
-Tests use fixtures and mock transports, never the network, so a green suite says nothing about whether the live sites still parse. Only `ingest` on the owner's machine proves that.
+Tests use fixtures and mock transports, never the network, so a green suite says nothing about whether the live sites still parse. Live ingestion was verified on 2026-11-12 using a temporary database.
 
 ## 8. Next tasks, in priority order
 
-1. **Verify Elvebredd live.** Ask the owner for the output of `python -m adoptme ingest`. If it errors ("no __next_f payload" or "no usable pet values"), ask for the page's raw HTML (or the `self.__next_f.push` scripts), fix `sources/elvebredd.py`, and add a real-data test fixture. Resolve whether values assume potions.
+1. **Elvebredd verified.** The live calculator exposes explicit potion columns. Keep using them to avoid guessing from default values.
 2. **Full catalog for adoptmevalues.** Ask the owner to run `curl -s 'https://adoptmevalues.gg/api/v1/items/Adoptme/pets?page=2&limit=24&sortBy=position' | head -c 1500` and paste the result. Only if the owner confirms the operator permits reading `/api/`, add pagination to `sources/adoptmevalues.py` (stop on an empty or repeated page; reuse the existing record parser if the shape matches `initialItems`).
-3. **Unit-rebase guard.** Detect a sudden uniform shift across most items in one source and suppress alerts (and flag it) rather than firing hundreds.
+3. **Unit-rebase guard implemented.** At least 10 pets and 80% of the fetched pet set must agree on a shift of at least 10%, with a 2% ratio tolerance and majority variant coverage per voting pet.
 4. **Run the Discord bot for real** with the owner's token; fix whatever breaks.
 5. **Keep it running** on an always-on machine to accumulate history. Look for a history source too: adoptmevalues pet pages draw a "Price history" chart, so a JSON endpoint behind it, if the operator allows it, could backfill weeks of data.
 6. **Prediction.** After a few weeks of data: a walk-forward backtest harness, then gradient boosting, then (only if justified) a neural net.

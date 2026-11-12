@@ -71,15 +71,13 @@ def main() -> None:
             count = export_dashboard(conn, args.output)
         print(f"Exported {count} pet value series to {args.output}")
     elif args.cmd == "trend":
-        from .messages import format_forecast
         from .parsing import normalize_variant_input
-        from .predict import forecast
+        from .messages import format_source_trends
 
         variant = normalize_variant_input(args.variant)
         variant = "normal" if variant == "any" else variant
         with db.session(cfg.db_path) as conn:
-            series = db.history(conn, args.pet, variant, days=90)
-        print(format_forecast(args.pet, variant, forecast(series, args.days), args.days))
+            print(format_source_trends(conn, args.pet, variant, args.days))
 
 
 if __name__ == "__main__":

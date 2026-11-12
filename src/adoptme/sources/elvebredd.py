@@ -1,13 +1,4 @@
-"""Read pet values embedded in Elvebredd's Adopt Me calculator page.
-
-The page is a Next.js app. Its values ship inside `self.__next_f.push([1, "..."])`
-script chunks. Each pet record carries `rvalue`, `nvalue` and `mvalue`, which we
-treat as regular, neon and mega values. Only one fragment of a real record has
-been seen so far (`"image":"/images/pets/Bat Dragon.png","rvalue":1001,
-"nvalue":2310,"mvalue":6550`), so the parser is deliberately tolerant: it finds
-every JSON object containing `rvalue` rather than relying on a fixed path.
-Unknown: whether the values assume fly/ride potions.
-"""
+"""Read explicit pet variant values embedded in Elvebredd's calculator."""
 
 from __future__ import annotations
 
@@ -19,10 +10,12 @@ from pathlib import PurePosixPath
 from bs4 import BeautifulSoup
 
 from ..models import ValueRecord
+from ..parsing import norm_name
 from .base import Source
 
 _SCRIPT_PREFIX = "self.__next_f.push("
 _COLUMNS = {"rvalue": "normal", "nvalue": "neon", "mvalue": "mega"}
+_POTIONS = {"nopotion": "", "fly": "_f", "ride": "_r", "fly&ride": "_fr"}
 
 
 def flight_text(html: str) -> str:
@@ -76,7 +69,7 @@ class ElvebreddSource(Source):
         for page in self.config["pages"]:
             html = self.client.get_text(page["url"], respect_robots=respect)
             for rec in self.parse(html):
-                records[rec.name, rec.variant] = rec
+                records[norm_name(rec.name), rec.variant] = rec
         return list(records.values())
 
     def parse(self, html: str) -> list[ValueRecord]:
@@ -88,16 +81,28 @@ class ElvebreddSource(Source):
             obj = _enclosing_object(text, match.start())
             if not obj:
                 continue
+            if obj.get("type", "pets") != "pets":
+                continue
             name = _pet_name(obj)
             if not name:
                 continue
             for column, variant in _COLUMNS.items():
-                try:
-                    value = float(obj.get(column))
-                except (TypeError, ValueError):
-                    continue
-                if isfinite(value) and value > 0:
-                    records[name, variant] = ValueRecord(self.name, name, "pets", variant, value)
+                explicit = {
+                    variant + suffix: obj[f"{column} - {label}"]
+                    for label, suffix in _POTIONS.items()
+                    if f"{column} - {label}" in obj
+                }
+                # Older payloads may lack potion columns. Keep their base value
+                # under an explicit unspecified variant instead of guessing.
+                if not explicit:
+                    explicit = {variant + "_unspecified": obj.get(column)}
+                for key, raw in explicit.items():
+                    try:
+                        value = float(raw)
+                    except (TypeError, ValueError):
+                        continue
+                    if isfinite(value) and value > 0:
+                        records[norm_name(name), key] = ValueRecord(self.name, name, "pets", key, value)
         if not records:
             raise ValueError("Elvebredd returned no usable pet values")
         return list(records.values())

@@ -27,22 +27,22 @@ def source(config=None, client=None) -> ElvebreddSource:
 def test_parses_real_fragment_name_from_image():
     recs = source().parse(page('0:{"pets":' + RECORDS + "}"))
     by = {(r.name, r.variant): r.value for r in recs}
-    assert by[("Bat Dragon", "normal")] == 1001
-    assert by[("Bat Dragon", "neon")] == 2310
-    assert by[("Bat Dragon", "mega")] == 6550
+    assert by[("Bat Dragon", "normal_unspecified")] == 1001
+    assert by[("Bat Dragon", "neon_unspecified")] == 2310
+    assert by[("Bat Dragon", "mega_unspecified")] == 6550
 
 
 def test_name_key_preferred_and_bad_values_skipped():
     by = {(r.name, r.variant): r.value for r in source().parse(page(RECORDS))}
-    assert by[("Shadow Dragon", "normal")] == 1200
-    assert ("Shadow Dragon", "neon") not in by  # "2,500x" isn't numeric
-    assert ("Shadow Dragon", "mega") not in by  # null
+    assert by[("Shadow Dragon", "normal_unspecified")] == 1200
+    assert ("Shadow Dragon", "neon_unspecified") not in by  # "2,500x" isn't numeric
+    assert ("Shadow Dragon", "mega_unspecified") not in by  # null
 
 
 def test_record_split_across_chunks():
     full = '{"image":"/images/pets/Owl.png","rvalue":50,"nvalue":120,"mvalue":300}'
     recs = source().parse(page(full[:30], full[30:]))
-    assert {(r.name, r.variant): r.value for r in recs}[("Owl", "mega")] == 300
+    assert {(r.name, r.variant): r.value for r in recs}[("Owl", "mega_unspecified")] == 300
 
 
 def test_duplicate_records_deduped():
@@ -94,3 +94,30 @@ def test_shipped_config_loads_and_is_flagged():
     cfg = json.loads((Path(__file__).parent.parent / "config" / "sources.json").read_text())["elvebredd"]
     assert cfg["type"] == "elvebredd" and cfg["ignore_robots"] is True and cfg["_permission"]
     assert ElvebreddSource("elvebredd", cfg, None).is_configured
+
+
+def test_explicit_potion_values_and_pet_filter():
+    # Shape of the live calculator payload, reduced to the relevant fields.
+    records = [
+        {"name": "Example Pet", "type": "pets", "rvalue": 100,
+         "rvalue - nopotion": 101, "rvalue - ride": 100, "rvalue - fly&ride": 99,
+         "nvalue": 250, "nvalue - nopotion": 280, "nvalue - fly&ride": 250},
+        {"name": "Example Egg", "type": "eggs", "rvalue": 9},
+    ]
+    by = {(r.name, r.variant): r.value for r in source().parse(page(json.dumps(records)))}
+    assert by == {
+        ("Example Pet", "normal"): 101,
+        ("Example Pet", "normal_r"): 100,
+        ("Example Pet", "normal_fr"): 99,
+        ("Example Pet", "neon"): 280,
+        ("Example Pet", "neon_fr"): 250,
+    }
+
+
+def test_dedupes_names_using_database_normalization():
+    records = [
+        {"name": "Skele-Rex", "rvalue": 8, "rvalue - nopotion": 7},
+        {"name": "Skele-rex", "rvalue": 9, "rvalue - nopotion": 9},
+    ]
+    recs = source().parse(page(json.dumps(records)))
+    assert len(recs) == 1 and recs[0].value == 9

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from sqlite3 import Connection
+
+from . import db
 from .models import Alert
-from .predict import Forecast
+from .predict import Forecast, forecast
 
 
 def variant_label(variant: str) -> str:
@@ -54,3 +57,18 @@ def format_forecast(name: str, variant: str, f: Forecast, horizon_days: int) -> 
     return (f"**{label}** looks **{f.direction}**: about {sign}{f.expected_change_pct}% over "
             f"{horizon_days} days (confidence {f.confidence:.0%}, {f.points} points). "
             "This is a simple trend line, not a guarantee; updates can move values suddenly.")
+
+
+def format_source_trends(conn: Connection, name: str, variant: str, days: int) -> str:
+    """Run independent forecasts so differing source scales never mix."""
+    sources = dict.fromkeys(
+        row["source"] for row in db.latest_values(conn, name) if row["variant"] == variant
+    )
+    if not sources:
+        return format_forecast(name, variant, forecast([], days), days)
+    return "\n".join(
+        f"**{source}** · " + format_forecast(
+            name, variant, forecast(db.history(conn, name, variant, source=source, days=90), days), days
+        )
+        for source in sources
+    )

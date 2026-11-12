@@ -9,8 +9,8 @@
         "url": "https://elvebredd.com/adopt-me-calculator"
       }
     ],
-    "_permission": "Owner states Elvebredd's operator gave them permission to read values. Its robots.txt disallows /api and the calculator path, so the robots check is skipped for this source only. Set ignore_robots to false or enabled to false to stop.",
-    "_note": "Reads rvalue/nvalue/mvalue (regular/neon/mega) from the page's embedded Next.js payload. Only one real fragment has been seen, so verify with `python -m adoptme ingest`. Unit differs from Adopt Me Values (Bat Dragon 1001 here vs 3.15 Frost there); sources are stored separately."
+    "_permission": "Owner states Elvebredd's operator gave them permission to read values. The configured override applies to this source only. Set ignore_robots to false or enabled to false to stop.",
+    "_note": "Reads explicit potion variants for pets from the calculator page. The scale differs from Adopt Me Values, and each source is stored separately."
   },
   "adoptmevalues": {
     "type": "adoptmevalues",

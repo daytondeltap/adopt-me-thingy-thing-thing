@@ -156,3 +156,51 @@ def test_variant_label():
     assert variant_label("normal") == "normal"
     assert variant_label("mega_fr") == "mega fly ride"
     assert variant_label("neon_f") == "neon fly"
+
+
+def test_rebase_suppresses_only_affected_source(conn, caplog):
+    db.add_watch(conn, "u1", "Pet 0", "any", "any_change", None)
+    a = FakeSource("elvebredd", [rec(100, name=f"Pet {i}") for i in range(12)])
+    b = FakeSource("other", [rec(3, name="Pet 0", source="other")])
+    run_once(conn, [a, b])
+    a._records = [rec(200, name=f"Pet {i}") for i in range(12)]
+    b._records = [rec(4, name="Pet 0", source="other")]
+    changes, alerts = run_once(conn, [a, b])
+    assert len(changes) == 13
+    assert [alert.change.source for alert in alerts] == ["other"]
+    assert "possible unit rebase" in caplog.text
+    assert run_once(conn, [a, b]) == ([], [])
+
+
+def test_rebase_requires_broad_pet_coverage(conn):
+    db.add_watch(conn, "u1", "Pet 0", "any", "any_change", None)
+    a = FakeSource("elvebredd", [rec(100, name=f"Pet {i}") for i in range(20)])
+    run_once(conn, [a])
+    a._records = [rec(200 if i < 10 else 100, name=f"Pet {i}") for i in range(20)]
+    assert len(run_once(conn, [a])[1]) == 1
+
+
+def test_old_elvebredd_values_are_kept_separate(tmp_path):
+    path = str(tmp_path / "old.db")
+    with db.session(path) as conn:
+        db.record_snapshot(conn, rec(100), T0)
+        conn.execute("PRAGMA user_version = 0")
+    with db.session(path) as conn:
+        change = db.record_snapshot(conn, rec(101), T0 + timedelta(days=1))
+        assert change.prev_value is None
+        assert {row["source"] for row in db.latest_values(conn, "Shadow Dragon")} == {
+            "elvebredd", "elvebredd_legacy",
+        }
+
+
+def test_trends_do_not_pool_history_from_different_sources(conn):
+    from adoptme.messages import format_source_trends
+
+    now = db.utcnow()
+    for i in range(6):
+        stamp = now - timedelta(days=6 - i)
+        db.record_snapshot(conn, rec(100 + i * 10, source="elvebredd"), stamp)
+        db.record_snapshot(conn, rec(10 - i, source="adoptmevalues"), stamp)
+    text = format_source_trends(conn, "Shadow Dragon", "normal", 7)
+    assert "**adoptmevalues**" in text and "**falling**" in text.splitlines()[0]
+    assert "**elvebredd**" in text and "**rising**" in text.splitlines()[1]

@@ -2,7 +2,7 @@
 
 Personal-use tool that records pet values from value-list sites, DMs you on Discord when a pet you're watching changes or crosses a target, and gives a simple trend forecast.
 
-**Sources:** Adopt Me Values is active. Elvebredd is enabled with a per-source robots.txt override, because the owner states its operator gave permission (its robots.txt disallows the calculator and `/api` paths). amvgg.com is excluded.
+**Sources:** Adopt Me Values is active. Elvebredd is enabled with a per-source robots.txt override, because the owner states its operator gave permission (its robots.txt disallows `/api` and paths under `/adopt-me-calculator/`). amvgg.com is excluded.
 
 **Scope:** values only. It does not scrape trade ads and it does not automate anything in Roblox/Adopt Me. Alerts are notifications; you make the trades yourself.
 
@@ -19,7 +19,7 @@ Personal-use tool that records pet values from value-list sites, DMs you on Disc
 | Discord bot (`/watch /unwatch /watchlist /value /trend`) + background poller | done; **not yet run against real Discord** |
 | Baseline trend predictor | done, tested |
 | Adopt Me Values ingest | Verified against its public pet list. Covers the initial batch of pets and available variants in that batch. |
-| Elvebredd ingest | Parser written from one real fragment and tested on synthetic data; **not yet run against the live page**. Reads regular/neon/mega values from `/adopt-me-calculator`. |
+| Elvebredd ingest | Verified live with 9,636 explicit values across 803 pets. Uses potion-specific fields from `/adopt-me-calculator` and skips eggs and pet wear. |
 | Web dashboard | Search, source filter, and charts from a local JSON export. |
 | Gradient boosting / neural net predictor | later, needs weeks of history first |
 
@@ -59,7 +59,7 @@ Use `python -m adoptme probe <url>` to inspect an allowed public value page. In 
 - `/value pet`: latest values across sources
 - `/trend pet [variant] [days]`: baseline forecast (needs a few days of history)
 
-Threshold alerts fire when the value *crosses* your target, not on every poll while it sits below.
+Threshold alerts fire when the value *crosses* your target, not on every poll while it sits below. A possible source-wide rebase is logged and suppresses that source’s alerts for the poll while preserving its recorded values. Trend forecasts are calculated independently for each source. Existing Elvebredd snapshots with ambiguous potion variants are retained under `elvebredd_legacy`.
 
 ## Politeness
 

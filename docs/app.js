@@ -3,7 +3,7 @@
 const el = (id) => document.getElementById(id);
 const number = new Intl.NumberFormat(undefined, { maximumFractionDigits: 6 });
 const date = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
-const sources = { adoptmevalues: "Adopt Me Values", elvebredd: "Elvebredd" };
+const sources = { adoptmevalues: "Adopt Me Values", elvebredd: "Elvebredd", elvebredd_legacy: "Elvebredd (legacy variants)" };
 const sourceName = (source) => Object.hasOwn(sources, source) ? sources[source] : source;
 const variantName = (variant) => variant.replaceAll("_", " ").replace(/\bfr\b/g, "Fly Ride").replace(/\bf\b/g, "Fly").replace(/\br\b/g, "Ride");
 let series = [];

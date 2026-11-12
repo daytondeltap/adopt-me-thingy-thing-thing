@@ -28,7 +28,7 @@ class Config:
             discord_token=os.environ.get("DISCORD_TOKEN", "").strip(),
             alert_channel_id=int(channel) if channel else None,
             db_path=os.environ.get("DB_PATH", "data/adoptme.db"),
-            poll_minutes=max(5, int(os.environ.get("POLL_MINUTES", "30"))),
+            poll_minutes=max(30, int(os.environ.get("POLL_MINUTES", "30"))),
             min_delay_seconds=max(1.0, float(os.environ.get("MIN_DELAY_SECONDS", "5"))),
             respect_robots=_bool(os.environ.get("RESPECT_ROBOTS"), True),
             user_agent=os.environ.get(

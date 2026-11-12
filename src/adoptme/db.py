@@ -73,6 +73,12 @@ def connect(path: str) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode = WAL")
     conn.executescript(SCHEMA)
+    if conn.execute("PRAGMA user_version").fetchone()[0] == 0:
+        with conn:
+            conn.execute("BEGIN IMMEDIATE")
+            if conn.execute("PRAGMA user_version").fetchone()[0] == 0:
+                conn.execute("UPDATE snapshots SET source = 'elvebredd_legacy' WHERE source = 'elvebredd'")
+                conn.execute("PRAGMA user_version = 1")
     return conn
 
 

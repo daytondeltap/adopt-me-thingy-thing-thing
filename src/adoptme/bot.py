@@ -13,10 +13,9 @@ from . import db
 from .config import Config
 from .http import PoliteClient
 from .ingest import run_once
-from .messages import format_alert, format_forecast, format_values
+from .messages import format_alert, format_source_trends, format_values
 from .models import Alert
 from .parsing import normalize_variant_input
-from .predict import forecast
 from .sources import load_sources
 
 log = logging.getLogger(__name__)
@@ -182,12 +181,9 @@ class TrackerBot(discord.Client):
 
             def work():
                 with db.session(db_path) as conn:
-                    return db.history(conn, pet, variant_key, days=90)
+                    return format_source_trends(conn, pet, variant_key, days)
 
-            series = await asyncio.to_thread(work)
-            await interaction.response.send_message(
-                format_forecast(pet, variant_key, forecast(series, days), days)
-            )
+            await interaction.response.send_message(await asyncio.to_thread(work))
 
 
 def run(cfg: Config) -> None:
